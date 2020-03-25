@@ -1,0 +1,13 @@
+// Create a new document
+function createDoc(){
+  var doc = DocumentApp.create('New Test Doc')
+}
+
+// 
+recover name of the document by Id or URL
+function updateDoc(){
+  // var doc = DocumentApp.openById('1zDnILGTpEmdhIA7SeaVi2L6g3hHyjKw2JQuWQyHn8FE');
+  var doc = DocumentApp.openByUrl('https://docs.google.com/document/d/1zDnILGTpEmdhIA7SeaVi2L6g3hHyjKw2JQuWQyHn8FE/');
+  Logger.log(doc.getName());
+
+}

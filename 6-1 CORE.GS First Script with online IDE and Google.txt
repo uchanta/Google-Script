@@ -1,0 +1,7 @@
+function firstApp(){
+  var welcomeMessage = "Hello World";
+  for (var x=0;x<10;x++){
+    /* This funtion is similar to console in Javascript */
+    Logger.log(welcomeMessage + ' ' + x);
+  }
+}

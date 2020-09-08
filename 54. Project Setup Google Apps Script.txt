@@ -1,0 +1,75 @@
+/*
+Con una pagina (Sheet) con los nombre y sus direcciones de email
+podemos controlar los mensajes que se han enviado y
+estructurar el mensaje que seles va a enviar
+
+Core funtion: sendConfirmation()
+
+Project: Email Me
+Sheet: Email Me
+Script: Email Me
+
+*/
+
+function testUser(){ 
+  var user = {
+    'first':'Ubaldo',
+    'last':' Chantaca',
+    'email':'ubaldo.chantaca@gmail.com',
+    'sent':'...'
+  };
+  sendMessage(user);
+}
+
+function sendMessage(user){
+  var temp = HtmlService.createTemplateFromFile('message');
+  temp.user = user;
+  var html = temp.evaluate().getContent();
+  Logger.log(html);
+  MailApp.sendEmail({to:user.email, subject:"Welcome", htmlBody:html})
+}
+
+
+function sendConfirmation(){
+  var ui = SpreadsheetApp.getUi();
+  var ss = SpreadsheetApp.getActiveSheet();
+  var sel = ss.getActiveCell();
+  var row = sel.getRow();
+  var range = ss.getRange(row, 1, 1, ss.getLastColumn());
+  var data = range.getValues()[0];
+  Logger.log(range);
+  
+  
+  var user = {
+    'first':data[0],
+    'last':data[1],
+    'email':data[2],
+    'sent':data[3]
+  };
+  Logger.log(user);
+  if(!user.sent){
+    var message = "Do you want to aprove "+user.first+" "+user.last+"?"; 
+    var result = ui.alert(message, ui.ButtonSet.YES_NO);
+    if(result == ui.Button.YES){
+      ss.getRange(row,4).setValue('sent');
+      sendMessage(user);
+      ui.alert('Email sent to '+user.email+' from row'+row)
+    }else{
+      ui.alert('No Email Sent cancelled row '+row);
+    }
+  }else{
+    ui.alert('This email has been already been sent row '+row);
+    
+    
+  }
+  
+  //ui.alert('Range '+data[0]+', '+data[1]+', '+data[2]+', '+data[3]);
+
+}
+
+
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('Checker').addItem('Check', 'sendConfirmation').addToUi();
+}
+

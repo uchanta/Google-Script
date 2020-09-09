@@ -1,0 +1,281 @@
+// Si encuentra el numero 12 lo marca como encontrado en la ultima columna
+function checker(){
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('sheet1');
+  var rows = sheet.getDataRange().getValues();
+  rows.forEach(function(val,ind){
+    var rangerD = sheet.getRange((ind+1), 4);
+    var found = false;
+    for(var x=0;x<val.length;x++){
+      if(val[x]=='12'){
+        found = true;
+      }
+    }
+    rangerD.setFontSize('10');
+    if(found){
+    rangerD.setFontSize('16');
+    rangerD.setValue(['FOUND']);
+    rangerD.setBackground('green');
+    }else{
+    rangerD.setValue(['NOT FOUND']);
+    rangerD.setBackground('red');
+    }
+  })
+}
+
+// Localiza archivos en un subdirectorio y los captura en una hoja SHEET
+function sFolders(){
+  var ui = SpreadsheetApp.getUi();
+  var result = ui.prompt('Finder','What value to search for?', ui.ButtonSet.OK_CANCEL);
+  var button = result.getSelectedButton();
+  var val = result.getResponseText();
+  if(button == ui.Button.OK){
+    folderSearch(val);
+    ui.alert('Search for '+val);
+  }else{
+    ui.alert('You cancelled');
+  }
+}
+ 
+function folderSearch(val){
+  var id = '1wM6VlG9ueIDBfsGofTqkFbxk9LVuepUn7119fhVyTT8';
+  var ss = SpreadsheetApp.openById(id);
+  var sheet = ss.getSheetByName(val);
+  if(sheet != null){ss.deleteSheet(sheet);}
+  sheet = ss.insertSheet();
+  sheet.setName(val);
+  var params = 'fullText contains "'+val+'"';
+  var results = DriveApp.getFolderById('1j8d21PKDojzbGOAv681yLgsibA8DWYH_').searchFiles(params)
+  while(results.hasNext()){
+    var file = results.next();
+    Logger.log(file.getName(),file.getUrl());
+    sheet.appendRow([file.getName(),file.getUrl()]);
+  }
+}
+
+// Copia un rango seleccionado de SHEET a una nueva hoja llamada test
+function copyCon(){
+  Logger.log('Copy');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+  var data = sheet.getActiveRange().getValues();
+  Logger.log(data);
+  var newName = 'test';
+  var nSheet = ss.getSheetByName(newName);
+  if(nSheet != null){
+    ss.deleteSheet(nSheet);
+  }
+  nSheet = ss.insertSheet();
+  nSheet.setName(newName);
+  data.forEach(function(row){
+    nSheet.appendRow(row);
+  }) 
+}
+
+// Crea un archivo PDF a partir de la hoja SHEET
+function sheetasPDF(){
+  var id = '1wM6VlG9ueIDBfsGofTqkFbxk9LVuepUn7119fhVyTT8';
+  var ss = SpreadsheetApp.openById(id);
+  var sheet = ss.getSheetByName('sheet1');
+ 
+  var folder = DriveApp.getFolderById('1j8d21PKDojzbGOAv681yLgsibA8DWYH_');
+  var tempSheet = DriveApp.getFileById(id).makeCopy('tempSheet2',folder);
+  var tempID = tempSheet.getId();
+  
+  var ss2 = SpreadsheetApp.openById(tempID);
+  var sheets = ss2.getSheets();
+  for(var i=0;i<sheets.length;i++){
+    if(sheets[i].getSheetName() != sheet.getSheetName()){
+      ss2.deleteSheet(sheets[i]);
+    }
+  }
+  
+  var newBlob = ss2.getBlob().getAs('application/pdf').setName(sheet.getName());
+  var newFile = folder.createFile(newBlob);
+  DriveApp.getFileById(tempID).setTrashed(true);
+  
+  var email = Session.getActiveUser().getEmail() || 'gappscourses@gmail.com';
+  var subject = 'PDF gen ' + sheet.getName();
+  var body = 'Whatever you want';
+  GmailApp.sendEmail(email, subject, body, {
+    htmlBody : body,
+    attachments : [newBlob]
+  })
+} 
+
+// Enviar la pagina Sheet1 a mi email, 
+// via la opción del menu ADV
+function emailTable(){
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var email = Session.getActiveUser().getEmail();
+  Logger.log(email);
+  MailApp.sendEmail({
+    to:email,
+    subject:'Email of sheet '+sheet.getName(),
+    htmlBody: makeHTML()
+  })
+}
+
+// Crear una API para subir la información a una pagina HTML
+function doGet(){
+  var html = makeHTML();
+  return HtmlService.createHtmlOutput(html);
+}
+ 
+function makeHTML(){
+  var id = '1wM6VlG9ueIDBfsGofTqkFbxk9LVuepUn7119fhVyTT8';
+  var sheet = SpreadsheetApp.openById(id).getSheetByName('sheet1'); 
+  var dataRange = sheet.getRange(1,1,sheet.getLastRow(),sheet.getLastColumn());
+  var data = dataRange.getValues();
+  Logger.log(data);
+  var html = ['<h1>'+sheet.getName()+'</h1><table>'];
+  var fSize = 16;
+  for(var row=0;row<data.length;row++){
+    html.push('<tr>');
+    for(var col=0;col<data[row].length;col++){
+      var cellText = data[row][col];
+      html.push('<td style="border:1px solid black;text-align:center;width:100px;font-size:'+fSize+'px">'+cellText+'</td>');
+    }
+    fSize =  12;
+    html.push('</tr>');
+  }
+  html.push('</table>');
+  var rep = html.join('');
+  Logger.log(rep);
+  return rep;
+}
+
+function getCells(){
+  var id = '14dLUFmgJgPvNmEvbVLywtFKL_9frPQMbqmxBTM130L8';
+  var sheet = SpreadsheetApp.openById(id).getSheetByName('sheet1');
+  var range = sheet.getDataRange();
+  var formulas = range.getFormulas();
+  formulas.forEach(function(v){
+    //Logger.log(v);
+  })
+  var nFormats= range.getNumberFormats();
+  nFormats.forEach(function(w){
+    //Logger.log(w);
+  })
+  var values = range.getValues();
+  values.forEach(function(x){
+    //Logger.log(x);
+  })
+  var backs = range.getBackgrounds();
+  backs.forEach(function(z,ind){
+    Logger.log(backs[ind]);
+    if(backs[ind][0].toString() == '#ffffff'){
+      Logger.log('found');
+      var cell = sheet.getRange(ind+1,1,1,1);
+      cell.setBackground('red');
+    }
+  })
+}
+
+function onOpen(){
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('Adv')
+  .addItem('Search Folders', 'sFolders')
+  .addItem('Email Me', 'emailTable')
+  .addItem('Update Content', 'upContent')
+  .addItem('find replace','finder')
+  .addItem('Cheker','checker')
+  .addItem('copy Content','copyCon')
+  .addToUi()
+}
+ 
+function test1(){
+  finderReplacer('60');
+}
+ 
+function finderReplacer(val){
+  var id = '14dLUFmgJgPvNmEvbVLywtFKL_9frPQMbqmxBTM130L8';
+  var ss = SpreadsheetApp.openById(id);
+  var sheet = ss.getSheetByName('sheet1');
+  var range = sheet.getDataRange();
+  var values = range.getValues();
+  var counter = 0;
+  for(var i=1;i<values.length;i++){
+    for(var x=0;x<values[i].length;x++){
+    if(values[i][x] ==val){
+      Logger.log(values[i][x]);
+      values[i][x] = 100;
+      var cell = sheet.getRange(i+1, x+1,1,1);
+      cell.setBackground('blue');
+      cell.setValue(500);
+      counter++;
+    }
+    }
+  }
+  sheet.getDataRange().setValues(values);
+  sumFormula();
+  return counter;
+}
+ 
+function finder(){
+  Logger.log('finder');
+  var ui = SpreadsheetApp.getUi();
+  //ui.alert('You click me');
+  var result = ui.prompt('Finder','What value', ui.ButtonSet.OK_CANCEL);
+  var button = result.getSelectedButton();
+  //ui.alert(button);
+  var num = result.getResponseText();
+  if(button == ui.Button.OK){
+    var res = finderReplacer(num);
+    ui.alert('Search for '+num+ ' found results='+res);
+  }
+  else if(button == ui.Button.CANCEL){
+    ui.alert('You cancelled');
+  }
+  else if(button == ui.Button.CLOSE){
+    ui.alert('You closed me');
+  }
+}
+
+function upContent(){
+  var id = '14dLUFmgJgPvNmEvbVLywtFKL_9frPQMbqmxBTM130L8';
+  var ss = SpreadsheetApp.openById(id);
+  var sheet = ss.getSheetByName('sheet1');
+  var range = sheet.getDataRange();
+  var rows = range.getValues();
+  Logger.log(rows);
+  var values = rows.slice(1);
+  Logger.log(values);
+  values.forEach(function(val,ind){
+    Logger.log(val);
+    Logger.log(ind+2);
+    var holder = sheet.getRange((ind+2), 1, 1, 2);
+    holder.setValues([[ranNum(500),ranNum(1000)]]); 
+  })
+}
+
+function sumFormula(){
+  var id = '14dLUFmgJgPvNmEvbVLywtFKL_9frPQMbqmxBTM130L8';
+  var ss = SpreadsheetApp.openById(id);
+  var sheet = ss.getSheetByName('sheet1');
+  var range = sheet.getRange(2,3,(sheet.getLastRow()-1),1);
+  range.setFontColor('red');
+  range.setFormula("=SUM(A2:B2)");
+}
+
+function addContent() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheets()[0];
+  sheet.clear({formatOnly:true, contentesOnly:true});
+  sheet.appendRow(['A','B','Total']);
+  Logger.log(sheet);  
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  Logger.log(lastRow + ' ' +lastCol);
+  var range = sheet.getRange(1, 1, lastRow, lastCol);
+  Logger.log(range.getValues());
+  range.setFontSize('16');
+  for(var x=0; x<10;x++){
+    sheet.appendRow([ranNum(100),ranNum(200)]);
+    sheet.getRange((x+2),1,1,lastCol).setFontSize('10');
+  }  
+}
+
+function ranNum(max){
+  var val = Math.floor((Math.random()*max)+1);
+  return val; 
+}
